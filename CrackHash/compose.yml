@@ -1,0 +1,20 @@
+services:
+
+  worker1:
+    build: ./worker
+
+  worker2:
+    build: ./worker
+
+  worker3:
+    build: ./worker
+
+  manager:
+    build: ./manager
+    container_name: manager
+    ports:
+      - "8080:8080"
+    depends_on:
+      - worker1
+      - worker2
+      - worker3

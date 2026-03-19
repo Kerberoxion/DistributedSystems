@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="EN">
+<head>
+    <meta charset="UTF-8">
+    <title>CrackHash</title>
+</head>
+
+<body>
+
+<h2>Crack MD5</h2>
+
+<label for="hash"></label><input id="hash" placeholder="MD5 hash">
+<label for="maxLength"></label><input id="maxLength" type="number" placeholder="max length">
+
+<button onclick="start()">Start</button>
+<button onclick="check()">Check</button>
+
+<p id="status"></p>
+<p id="result"></p>
+
+<script>
+
+    let requestId = null;
+
+    function start() {
+
+        fetch("/api/hash/crack", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                hash: document.getElementById("hash").value,
+                maxLength: document.getElementById("maxLength").value
+            })
+        })
+            .then(r => r.json())
+            .then(data => {
+                requestId = data.requestId;
+                check();
+            });
+    }
+
+    function check() {
+        if(requestId != null) {
+            fetch(`/api/hash/status?requestId=${requestId}`)
+                .then(r => r.json())
+                .then(data => {
+
+                    document.getElementById("status").innerText = data.status;
+
+                    if (data.status === "READY") {
+                        document.getElementById("result").innerText =
+                            data.data.join(", ");
+                    }
+                    else{
+                        document.getElementById("result").innerText = null;
+                    }
+
+                });
+        } else{
+            document.writeln("Click on the start button");
+        }
+    }
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: Manager
+
+workers:
+  URLs:
+    - http://worker1:8080
+    - http://worker2:8080
+    - http://worker3:8080
