@@ -1,0 +1,94 @@
+services:
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    hostname: rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: rab
+      RABBITMQ_DEFAULT_PASS: 1234
+      RABBITMQ_DEFAULT_VHOST: vhost
+    volumes:
+      - ./rabbitmq:/var/lib/rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+  mongo1:
+    hostname: mongo1
+    image: mongo
+    expose:
+      - 27017
+    ports:
+      - "30001:27017"
+    restart: always
+    command: mongod --replSet rs0
+  mongo2:
+    hostname: mongo2
+    image: mongo
+    expose:
+      - 27017
+    ports:
+      - "30002:27017"
+    restart: always
+    command: mongod --replSet rs0
+  mongo3:
+    hostname: mongo3
+    image: mongo
+    expose:
+      - 27017
+    ports:
+      - "30003:27017"
+    restart: always
+    command: mongod --replSet rs0
+
+  # finally, we can define the initialization server
+  # this runs the `rs.initiate` command to intialize
+  # the replica set and connect the three servers to each other
+  mongoinit:
+    image: mongo
+    # this container will exit after executing the command
+    restart: "no"
+    depends_on:
+      - mongo1
+      - mongo2
+      - mongo3
+    command: >
+      mongosh --host mongo1:27017 --eval '
+        rs.initiate({
+          _id: "rs0",
+          members: [
+            { _id: 0, host: "mongo1:27017" },
+            { _id: 1, host: "mongo2:27017" },
+            { _id: 2, host: "mongo3:27017" }
+          ]
+        })
+      '
+
+  worker1:
+    build: ./worker
+    depends_on:
+      - rabbitmq
+
+  worker2:
+    build: ./worker
+    depends_on:
+      - rabbitmq
+
+  worker3:
+    build: ./worker
+    depends_on:
+      - rabbitmq
+
+  manager:
+    build: ./manager
+    container_name: manager
+    ports:
+      - "8080:8080"
+    depends_on:
+      - rabbitmq
+      - worker1
+      - worker2
+      - worker3
+      - mongo1
+      - mongo2
+      - mongo3

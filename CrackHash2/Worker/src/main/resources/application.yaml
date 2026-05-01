@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: Worker
+  rabbitmq:
+    host: rabbitmq
+    virtual-host: vhost
+    password: 1234
+    username: rab
+    listener:
+      simple:
+        acknowledge-mode: manual
+        prefetch: 1

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="EN">
+<head>
+    <meta charset="UTF-8">
+    <title>CrackHash</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            margin: auto;
+            width: 400px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        .status {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        .result {
+            margin-top: 10px;
+            color: #333;
+        }
+
+        .request-id {
+            font-size: 12px;
+            color: gray;
+            margin-top: 10px;
+        }
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+    <h2>CrackHash</h2>
+
+    <label for="hash"></label><input id="hash" placeholder="MD5 hash">
+    <label for="maxLength"></label><input id="maxLength" type="number" placeholder="max length">
+
+    <br>
+
+    <button onclick="start()">Start</button>
+
+    <hr>
+
+    <label for="requestIdInput"></label><input id="requestIdInput" placeholder="Enter requestId to check">
+    <button onclick="check()">Check</button>
+
+    <div class="request-id" id="requestId"></div>
+
+    <div class="status" id="status"></div>
+    <div class="result" id="result"></div>
+</div>
+
+<script>
+
+    let requestId = null;
+
+    function start() {
+        fetch("/api/hash/crack", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                hash: document.getElementById("hash").value,
+                maxLength: document.getElementById("maxLength").value
+            })
+        })
+            .then(r => r.json())
+            .then(data => {
+                requestId = data.requestId;
+
+                document.getElementById("requestId").innerText =
+                    "Request ID: " + requestId;
+
+                document.getElementById("requestIdInput").value = requestId;
+
+                document.getElementById("result").innerText = "";
+
+                autoCheck();
+            });
+    }
+
+    function check() {
+
+        // 👉 берём либо введённый id, либо последний
+        const inputId = document.getElementById("requestIdInput").value;
+
+        if (inputId) {
+            requestId = inputId;
+        }
+
+        if (!requestId) {
+            alert("Введите requestId или нажмите Start");
+            return;
+        }
+
+        fetch(`/api/hash/status?requestId=${requestId}`)
+            .then(r => r.json())
+            .then(updateUI)
+            .catch(() => alert("Ошибка запроса"));
+    }
+
+    function autoCheck() {
+        const interval = setInterval(() => {
+
+            if (!requestId) return;
+
+            fetch(`/api/hash/status?requestId=${requestId}`)
+                .then(r => r.json())
+                .then(data => {
+
+                    updateUI(data);
+
+                    if (data.status === "READY") {
+                        clearInterval(interval);
+                    }
+                })
+                .catch(() => {
+                    console.log("Server not available");
+                });
+
+        }, 2000);
+    }
+
+    function updateUI(data) {
+
+        document.getElementById("status").innerText = data.status;
+
+        if (data.status === "READY") {
+            document.getElementById("result").innerText =
+                "Result: " + data.data.join(", ");
+        } else {
+            document.getElementById("result").innerText = "";
+        }
+    }
+
+</script>
+
+</body>
+</html>

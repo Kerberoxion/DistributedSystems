@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: Manager
+  rabbitmq:
+    host: rabbitmq
+    virtual-host: vhost
+    password: 1234
+    username: rab
+  mongodb:
+    uri: mongodb://mongo1:27017,mongo2:27017,mongo3:27017/crackhash?replicaSet=rs0
+    representation:
+      uuid: standard
+
+workers:
+  URLs:
+    - http://worker1:8080
+    - http://worker2:8080
+    - http://worker3:8080
